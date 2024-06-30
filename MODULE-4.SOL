@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract DegenGToken is ERC20 {
+
+    address public owner;
+
+    event Mint(address indexed to, uint256 value);
+    event Burn(address indexed from, uint256 value);
+
+    constructor() ERC20("Degen", "DGN") {
+        owner = msg.sender;
+    }
+
+    string[3] public RedeemItems = ['1.Hoodie', '2.Cap', '3.Bagpack'];
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can call this function.");
+        _;
+    }
+
+    // Mint new tokens
+    function mintToken(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+        emit Mint(to, amount);
+    }
+
+    // Transferring tokens
+    function transferTokens(address to, uint256 amount) external {
+        require(balanceOf(msg.sender) >= amount, "Insufficient tokens");
+        require(amount > 0, "Transfer amount must be greater than zero");
+        _transfer(msg.sender, to, amount);
+    }
+
+    // Burning tokens
+    function burnTokens(uint256 amount) external {
+        require(amount <= balanceOf(msg.sender), "Insufficient tokens");
+        _burn(msg.sender, amount);
+        emit Burn(msg.sender, amount);
+    }
+
+    // Check item availability
+    function checkItemAvailability(uint256 itemNo) public view returns (bool) {
+        if(itemNo < 1 || itemNo > RedeemItems.length){
+            return false;
+        }
+        return true;
+    }
+
+    // Redeeming tokens for items
+    function redeemTokensForItem(uint256 itemNo) external {
+        uint256 redeemAmount;
+        uint256 shippingCost = 50;
+
+        if(itemNo == 1) { 
+            redeemAmount = 100;
+        } else if(itemNo == 2) { 
+            redeemAmount = 200;
+        } else if(itemNo == 3) { 
+            redeemAmount = 300;
+        } else {
+            revert("Incorrect item number");
+        }
+        
+        require(balanceOf(msg.sender) >= redeemAmount + shippingCost, "Insufficient tokens for redemption");
+        _burn(msg.sender, redeemAmount);
+    }
+
+    // View redeemable items
+    function redeemableItems() public view returns (string[3] memory) {
+        return RedeemItems;
+    }
+}
